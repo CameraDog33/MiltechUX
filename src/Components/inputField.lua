@@ -37,11 +37,11 @@ function InputField.new(window: any, placeholder: string, position: UDim2, size:
 	
 	-- Visual feedback loops
 	box.Focused:Connect(function()
-		TweenService:Create(stroke, TweenInfo.new(0.15), {Color = MiltechUI.Theme.Border}):Play()
+		MiltechUI.Animations.Tween(stroke, {Color = MiltechUI.Theme.Border}, 0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	end)
-	
+
 	box.FocusLost:Connect(function()
-		TweenService:Create(stroke, TweenInfo.new(0.15), {Color = MiltechUI.Theme.BorderDim}):Play()
+		MiltechUI.Animations.Tween(stroke, {Color = MiltechUI.Theme.BorderDim}, 0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	end)
 	
 	-- Enforce character limits strictly
