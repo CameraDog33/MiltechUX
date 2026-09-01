@@ -37,6 +37,13 @@ local Btn = fetchComponent("Components/Button")
 local InputField = fetchComponent("Components/inputField")
 local Status = fetchComponent("Components/StatusDisplay")
 local Dialog = fetchComponent("Components/DialogueModal")
+local Viewport = fetchComponent("Components/Viewport")
+local Switch = fetchComponent("Components/Switch")
+local Slider = fetchComponent("Components/Slider")
+local Dropdown = fetchComponent("Components/Dropdown")
+local Tooltip = fetchComponent("Components/Tooltip")
+local Toast = fetchComponent("Components/Toast")
+local Tabs = fetchComponent("Components/Tabs")
 
 -- Resolve LocalPlayer (poll briefly)
 local Players = game:GetService("Players")
@@ -66,23 +73,64 @@ local UI = MiltechUI.new(player)
 UI.Sounds:SetSound("Click", "rbxassetid://12345678")
 UI.Sounds:SetSound("Hover", "rbxassetid://23456789")
 
-local demoWindow = Window.new(UI, "Demo Console", UDim2.new(0, 420, 0, 320), UDim2.new(0.5, -210, 0.5, -160))
-local nameInput = InputField.new(demoWindow, "player_name", UDim2.new(0, 0, 0, 36), UDim2.new(0, 400, 0, 28), 24)
-local health = Status.new(demoWindow, "Integrity", UDim2.new(0, 0, 0, 72), UDim2.new(0, 400, 0, 16))
+local demoWindow = Window.new(UI, "Demo Console", UDim2.new(0, 640, 0, 420), UDim2.new(0.5, -320, 0.5, -210))
+
+-- Left column controls
+local nameInput = InputField.new(demoWindow, "player_name", UDim2.new(0, 8, 0, 36), UDim2.new(0, 300, 0, 28), 24)
+local health = Status.new(demoWindow, "Integrity", UDim2.new(0, 8, 0, 72), UDim2.new(0, 300, 0, 16))
 health:Update(0.76)
 
-local function onConfirm()
-	print("Action confirmed")
-	health:Update(1)
-end
-local function onCancel()
-	print("Action cancelled")
-end
+local demoBtn = Btn.new(demoWindow, "Open Modal", UDim2.new(0, 8, 0, 110), UDim2.new(0, 180, 0, 32), function()
+	Dialog.new(UI, "Execute high-impact visual sequence?", function() health:Update(1); Toast.show(UI, "Confirmed", 2) end, function() Toast.show(UI, "Cancelled", 2) end)
+	Toast.show(UI, "Modal opened", 2)
+end)
+Tooltip.attach(demoBtn.Instance, "Open a confirmation modal")
 
-local demoBtn = Btn.new(demoWindow, "Open Modal", UDim2.new(0, 0, 0, 100), UDim2.new(0, 160, 0, 30), function()
-	Dialog.new(UI, "Execute high-impact visual sequence?", onConfirm, onCancel)
+-- Right column: viewport + controls
+local vp = Viewport.new(demoWindow, UDim2.new(0, 320, 0, 20), UDim2.new(0, 300, 0, 220), "Preview")
+
+-- Build tiny sample model for the viewport (simple holo-cube)
+local sampleModel = Instance.new("Model")
+local part = Instance.new("Part")
+part.Size = Vector3.new(2,2,2)
+part.Anchored = true
+part.Color = Color3.fromRGB(70,200,255)
+part.Material = Enum.Material.Neon
+part.Position = Vector3.new(0,0,0)
+part.Parent = sampleModel
+
+vp:SetModel(sampleModel)
+
+-- Switch demo
+local switch = Switch.new(demoWindow, UDim2.new(0, 8, 0, 150), UDim2.new(0, 40, 0, 18), false, function(state)
+	print("Switch state:", state)
+	Toast.show(UI, state and "Switch: ON" or "Switch: OFF", 1.6)
 end)
 
-MiltechUI.Animations.SmoothUDim2(demoWindow.Instance, "Position", UDim2.new(0.5, -210, 0.5, -160), 0.45)
+-- Slider demo (min 0, max 100)
+local slider = Slider.new(demoWindow, UDim2.new(0, 8, 0, 186), UDim2.new(0, 300, 0, 32), 0, 100, 42, function(value)
+	print("Slider value:", math.floor(value))
+end)
 
-print("MiltechUI executor example initialized (raw HTTP loader).")
+-- Dropdown demo
+local dropdown = Dropdown.new(demoWindow, "Mode", UDim2.new(0, 8, 0, 230), UDim2.new(0, 300, 0, 28), {"Alpha","Beta","Gamma"}, function(selection)
+	print("Dropdown selected:", selection)
+	Toast.show(UI, "Selected: " .. selection, 2)
+end)
+
+-- Tabs demo (below viewport)
+local tabs = Tabs.new(demoWindow, UDim2.new(0, 320, 0, 250), UDim2.new(0, 300, 0, 140), {"Info","Controls"})
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Size = UDim2.new(1, -12, 1, -12)
+infoLabel.Position = UDim2.new(0, 6, 0, 6)
+infoLabel.BackgroundTransparency = 1
+infoLabel.Text = "Preview pane and basic controls. Use the switch and slider to interact."
+infoLabel.Font = MiltechUI.Theme.FontMain
+infoLabel.TextColor3 = MiltechUI.Theme.TextMuted
+infoLabel.TextWrapped = true
+infoLabel.Parent = tabs.Pages["Info"]
+
+-- Entrance
+MiltechUI.Animations.SmoothUDim2(demoWindow.Instance, "Position", UDim2.new(0.5, -320, 0.5, -210), 0.45)
+
+print("MiltechUI executor example updated with Viewport, Switch, Slider, Dropdown, Tabs, Tooltip, and Toast demos.")
