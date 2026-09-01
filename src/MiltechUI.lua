@@ -27,6 +27,11 @@ function MiltechUI.new(player: Player)
 	screenGui.Parent = playerGui
 	
 	self.ScreenGui = screenGui
+	
+	-- Attach helpers to the framework instance for easy use
+	self.Sounds = MiltechUI.SoundManager.new(self)
+	self.Animations = MiltechUI.Animations
+	
 	return self
 end
 
@@ -111,14 +116,19 @@ function MiltechUI.Button.new(window: any, text: string, position: UDim2, size: 
 	stroke.Parent = btn
 	
 	btn.MouseEnter:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = MiltechUI.Theme.BorderDim}):Play()
-		TweenService:Create(stroke, TweenInfo.new(0.15), {Color = MiltechUI.Theme.Border}):Play()
+		MiltechUI.Animations.Tween(btn, {BackgroundColor3 = MiltechUI.Theme.BorderDim}, 0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		MiltechUI.Animations.Tween(stroke, {Color = MiltechUI.Theme.Border}, 0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		-- play hover sound (if set)
+		pcall(function() window.Parent.Parent.Sounds:Play("Hover") end)
 	end)
 	btn.MouseLeave:Connect(function()
-		TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(20, 26, 30)}):Play()
-		TweenService:Create(stroke, TweenInfo.new(0.15), {Color = MiltechUI.Theme.BorderDim}):Play()
+		MiltechUI.Animations.Tween(btn, {BackgroundColor3 = Color3.fromRGB(20, 26, 30)}, 0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		MiltechUI.Animations.Tween(stroke, {Color = MiltechUI.Theme.BorderDim}, 0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	end)
-	btn.MouseButton1Click:Connect(callback)
+	btn.MouseButton1Click:Connect(function()
+		pcall(function() window.Parent.Parent.Sounds:Play("Click") end)
+		callback()
+	end)
 	
 	self.Instance = btn
 	return self
@@ -185,6 +195,95 @@ end
 
 function MiltechUI.DataGrid:UpdateRow(key: string, newValue: string)
 	if self.Rows[key] then self.Rows[key].Text = string.upper(newValue) end
+end
+
+--------------------------------------------------------------------------------
+-- Animations / Tween Helpers
+--------------------------------------------------------------------------------
+MiltechUI.Animations = {}
+MiltechUI.Animations.__index = MiltechUI.Animations
+
+-- Simple wrapper around TweenService to make tweens concise and consistent
+function MiltechUI.Animations.Tween(instance: Instance, props: table, time: number?, style: Enum.EasingStyle?, direction: Enum.EasingDirection?, onComplete: (Tween?)?)
+	local TweenService = game:GetService("TweenService")
+	local tweenInfo = TweenInfo.new(time or 0.2, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out)
+	local tw = TweenService:Create(instance, tweenInfo, props)
+	if onComplete then
+		tw.Completed:Connect(function(status)
+			onComplete(tw)
+		end)
+	end
+	tw:Play()
+	return tw
+end
+
+-- Smoothly interpolate a UDim2 property over duration (uses UDim2:Lerp)
+function MiltechUI.Animations.SmoothUDim2(instance: Instance, propName: string, target: UDim2, duration: number)
+	local RunService = game:GetService("RunService")
+	local start = instance[propName]
+	if typeof(start) ~= "UDim2" then return end
+	local elapsed = 0
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function(dt)
+		elapsed = elapsed + dt
+		local t = math.clamp(elapsed / math.max(duration, 0.0001), 0, 1)
+		local v = start:Lerp(target, t)
+		instance[propName] = v
+		if t >= 1 then
+			conn:Disconnect()
+		end
+	end)
+	return true
+end
+
+--------------------------------------------------------------------------------
+-- Sound Manager (UI Sound placeholders)
+--------------------------------------------------------------------------------
+MiltechUI.SoundManager = {}
+MiltechUI.SoundManager.__index = MiltechUI.SoundManager
+
+-- Create with MiltechUI.SoundManager.new(core)
+-- Populate the SoundIds table with your rbxassetid://... strings.
+function MiltechUI.SoundManager.new(core: any)
+	local self = setmetatable({}, MiltechUI.SoundManager)
+	self.Core = core
+	-- Placeholder sound ids: replace the values with your asset ids (rbxassetid://12345678)
+	self.SoundIds = {
+		Hover = "rbxassetid://PASTE_HOVER_ID", -- UI hover
+		Click = "rbxassetid://PASTE_CLICK_ID", -- button click
+		Open = "rbxassetid://PASTE_OPEN_ID", -- window open
+		Close = "rbxassetid://PASTE_CLOSE_ID", -- window close
+		Confirm = "rbxassetid://PASTE_CONFIRM_ID",
+	}
+	return self
+end
+
+function MiltechUI.SoundManager:SetSound(key: string, soundId: string)
+	self.SoundIds[key] = soundId
+end
+
+function MiltechUI.SoundManager:Play(key: string, volume: number?, pitch: number?)
+	local id = self.SoundIds[key]
+	if not id then return end
+	-- If the placeholder hasn't been replaced, skip playing
+	if tostring(id):match("PASTE_") then return end
+	local sound = Instance.new("Sound")
+	sound.SoundId = id
+	sound.Volume = volume or 1
+	sound.PlaybackSpeed = pitch or 1
+	sound.Parent = self.Core and self.Core.ScreenGui or game:GetService("StarterGui")
+	sound:Play()
+	-- Auto cleanup when finished
+	local function cleanup()
+		pcall(function() sound:Destroy() end)
+	end
+	-- Use .Ended event where available
+	if sound.Ended then
+		sound.Ended:Connect(cleanup)
+	else
+		-- fallback timed cleanup for sounds without Ended event
+		delay(5, cleanup)
+	end
 end
 
 -- Return the entire combined library table directly
