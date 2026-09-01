@@ -50,10 +50,7 @@ function StatusDisplay:Update(percentage: number)
 		targetColor = MiltechUI.Theme.AccentB -- Caution Warning
 	end
 	
-	TweenService:Create(self.Fill, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-		Size = UDim2.new(clamped, 0, 1, 0),
-		BackgroundColor3 = targetColor
-	}):Play()
+	MiltechUI.Animations.Tween(self.Fill, {Size = UDim2.new(clamped, 0, 1, 0), BackgroundColor3 = targetColor}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 end
 
 return StatusDisplay

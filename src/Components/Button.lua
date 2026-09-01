@@ -27,25 +27,26 @@ function Button.new(window: any, text: string, position: UDim2, size: UDim2, cal
 	stroke.Parent = btn
 	
 	-- Interactive Micro-Animations
-	local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	
+	-- Use MiltechUI.Animations.Tween for consistent, centralized tweens
+	local tweenDuration = 0.15
+
 	btn.MouseEnter:Connect(function()
-		TweenService:Create(btn, tweenInfo, {BackgroundColor3 = MiltechUI.Theme.BorderDim}):Play()
-		TweenService:Create(stroke, tweenInfo, {Color = MiltechUI.Theme.Border}):Play()
+		MiltechUI.Animations.Tween(btn, {BackgroundColor3 = MiltechUI.Theme.BorderDim}, tweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		MiltechUI.Animations.Tween(stroke, {Color = MiltechUI.Theme.Border}, tweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	end)
-	
+
 	btn.MouseLeave:Connect(function()
-		TweenService:Create(btn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(20, 26, 30)}):Play()
-		TweenService:Create(stroke, tweenInfo, {Color = MiltechUI.Theme.BorderDim}):Play()
+		MiltechUI.Animations.Tween(btn, {BackgroundColor3 = Color3.fromRGB(20, 26, 30)}, tweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		MiltechUI.Animations.Tween(stroke, {Color = MiltechUI.Theme.BorderDim}, tweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	end)
-	
+
 	btn.MouseButton1Down:Connect(function()
-		TweenService:Create(btn, tweenInfo, {BackgroundColor3 = MiltechUI.Theme.Border}):Play()
+		MiltechUI.Animations.Tween(btn, {BackgroundColor3 = MiltechUI.Theme.Border}, tweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		btn.TextColor3 = MiltechUI.Theme.Background
 	end)
-	
+
 	btn.MouseButton1Up:Connect(function()
-		TweenService:Create(btn, tweenInfo, {BackgroundColor3 = MiltechUI.Theme.BorderDim}):Play()
+		MiltechUI.Animations.Tween(btn, {BackgroundColor3 = MiltechUI.Theme.BorderDim}, tweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		btn.TextColor3 = MiltechUI.Theme.TextPrimary
 		callback() -- Execute logic
 	end)
